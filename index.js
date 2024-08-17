@@ -95,12 +95,12 @@ app.post('/deleteAll', async (req, res) => {
 
 const scheduleJob = async () => {
     try {
-        const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000); // 1 minute ago
+        const sevenHoursAgo = new Date(Date.now() - 7 * 60 * 60 * 1000); // 7 hours ago
 
-        // Find and delete documents with empty arrays and older than 1 minute
+        // Find and delete documents with empty arrays and older than 7 hours
         const result = await model.deleteMany({
             arr: { $size: 0 },
-            lastUpdated: { $lt: oneMinuteAgo }
+            lastUpdated: { $lt: sevenHoursAgo }
         });
 
         console.log(`Deleted ${result.deletedCount} documents`);
@@ -109,8 +109,8 @@ const scheduleJob = async () => {
     }
 };
 
-// Schedule the job to run every minute
-cron.schedule('* * * * *', scheduleJob);
+// Schedule the job to run every 7 hours
+cron.schedule('0 */7 * * *', scheduleJob);
 
 mongooseConnect();
 
