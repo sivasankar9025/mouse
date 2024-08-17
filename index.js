@@ -22,15 +22,15 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const formattedDate = ${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')};
     let hours = date.getHours();
     const minutes = date.getMinutes();
     const seconds = date.getSeconds();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     hours = hours ? hours : 12; // the hour '0' should be '12'
-    let formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
-    formattedTime = `${formattedDate} ${formattedTime}`;
+    let formattedTime = ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm};
+    formattedTime = ${formattedDate} ${formattedTime};
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
     const response = new model({ name, registerNo, gender, graduate, hsc, myambition, dept, dob, date: formattedTime, arr, lastUpdated: Date.now() });
@@ -95,22 +95,22 @@ app.post('/deleteAll', async (req, res) => {
 
 const scheduleJob = async () => {
     try {
-        const sevenHoursAgo = new Date(Date.now() - 7 * 60 * 60 * 1000); // 7 hours ago
+        const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000); // 1 minute ago
 
-        // Find and delete documents with empty arrays and older than 7 hours
+        // Find and delete documents with empty arrays and older than 1 minute
         const result = await model.deleteMany({
             arr: { $size: 0 },
-            lastUpdated: { $lt: sevenHoursAgo }
+            lastUpdated: { $lt: oneMinuteAgo }
         });
 
-        console.log(`Deleted ${result.deletedCount} documents`);
+        console.log(Deleted ${result.deletedCount} documents);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
 };
 
-// Schedule the job to run every 7 hours
-cron.schedule('0 */7 * * *', scheduleJob);
+// Schedule the job to run every minute
+cron.schedule('* * * * *', scheduleJob);
 
 mongooseConnect();
 
