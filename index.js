@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { model } = require('./schema');
+const { model } = require('./schema'); // Ensure 'schema.js' exports your Mongoose schema properly
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
@@ -22,18 +22,38 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours || 12; // the hour '0' should be '12'
-    let formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
-    formattedTime = `${formattedDate} ${formattedTime}`;
+    
+    // Convert date and time to local string with proper format
+    const formattedDate = date.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).split('/').reverse().join('-');
+    
+    const formattedTime = date.toLocaleTimeString('en-US', {
+        hour12: true,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    const formattedDateTime = ${formattedDate} ${formattedTime};
+
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({ name, registerNo, gender, graduate, hsc, myambition, dept, dob, date: formattedTime, arr, lastUpdated: Date.now() });
+    const response = new model({
+        name, 
+        registerNo, 
+        gender, 
+        graduate, 
+        hsc, 
+        myambition, 
+        dept, 
+        dob, 
+        date: formattedDateTime, 
+        arr, 
+        lastUpdated: Date.now()
+    });
 
     try {
         const a = await response.save();
@@ -80,7 +100,6 @@ app.post('/score', async (req, res) => {
 
 app.post('/deleteAll', async (req, res) => {
     try {
-        // Delete all documents in the collection
         const result = await model.deleteMany({});
 
         if (result.deletedCount > 0) {
@@ -97,13 +116,12 @@ const scheduleJob = async () => {
     try {
         const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000); // 1 minute ago
 
-        // Find and delete documents with empty arrays and older than 1 minute
         const result = await model.deleteMany({
             arr: { $size: 0 },
             lastUpdated: { $lt: oneMinuteAgo }
         });
 
-        console.log(`Deleted ${result.deletedCount} documents`);
+        console.log(Deleted ${result.deletedCount} documents);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
