@@ -119,7 +119,7 @@ const scheduleJob = async () => {
             lastUpdated: { $lt: oneHourAgo }
         });
 
-        console.log(Deleted ${result.deletedCount} documents);
+        console.log(`Deleted ${result.deletedCount} documents`);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
