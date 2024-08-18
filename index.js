@@ -8,23 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const MySchema = new mongoose.Schema({
-    name: String,
-    registerNo: String,
-    gender: String,
-    graduate: String,
-    hsc: String,
-    myambition: String,
-    dept: String,
-    dob: Date,
-    date: String,
-    arr: [String], // Define `arr` as an array of strings
-    lastUpdated: { type: Date, default: Date.now }
-});
-
-const model = mongoose.model('MyModel', MySchema);
-
-// Mongoose Connection
 const mongooseConnect = async () => {
     try {
         await mongoose.connect('mongodb+srv://pssm9025528322:9025528322@cluster0.altz4n8.mongodb.net/user?retryWrites=true&w=majority&appName=Cluster0', {
@@ -37,7 +20,6 @@ const mongooseConnect = async () => {
     }
 };
 
-// POST Route to Save Data
 app.post('/post', async (req, res) => {
     const date = new Date();
     const options = {
@@ -52,20 +34,21 @@ app.post('/post', async (req, res) => {
     };
 
     const formattedTime = date.toLocaleString('en-US', options);
+    
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({
-        name,
-        registerNo,
-        gender,
-        graduate,
-        hsc,
-        myambition,
-        dept,
-        dob,
-        date: formattedTime,
-        arr, // Store array in the document
-        lastUpdated: Date.now()
+    const response = new model({ 
+        name, 
+        registerNo, 
+        gender, 
+        graduate, 
+        hsc, 
+        myambition, 
+        dept, 
+        dob, 
+        date: formattedTime, 
+        arr, 
+        lastUpdated: Date.now() 
     });
 
     try {
@@ -75,7 +58,6 @@ app.post('/post', async (req, res) => {
         res.status(500).json({ error: 'Failed to save data' });
     }
 });
-
 
 app.put('/update/:id', async (req, res) => {
     const id = req.params.id;
@@ -130,6 +112,7 @@ app.post('/deleteAll', async (req, res) => {
 const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
+        console.log('One hour ago:', oneHourAgo); // Logging the calculated time
 
         // Find and delete documents with empty arrays and older than 1 hour
         const result = await model.deleteMany({
@@ -137,20 +120,18 @@ const scheduleJob = async () => {
             lastUpdated: { $lt: oneHourAgo }
         });
 
-        console.log(`Deleted ${result.deletedCount} documents`);
+        console.log(Deleted ${result.deletedCount} documents);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
 };
 
 // Schedule the job to run every 1 hour
-cron.schedule('0 * * * *', scheduleJob);
+cron.schedule('0 * * * *', () => {
+    console.log('Cron job running at:', new Date()); // Logging when the cron job runs
+    scheduleJob();
+});
 
 mongooseConnect();
 
-app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
-
-// Start Mongoose Connection and Express Server
-mongooseConnect();
-
-app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
+app.listen(process.env.PORT || 5000, () => console.log('Port connected'));
