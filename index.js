@@ -22,14 +22,13 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-    
-    // Convert date and time to local string with proper format
+
     const formattedDate = date.toLocaleDateString('en-GB', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
     }).split('/').reverse().join('-');
-    
+
     const formattedTime = date.toLocaleTimeString('en-US', {
         hour12: true,
         hour: '2-digit',
@@ -37,7 +36,7 @@ app.post('/post', async (req, res) => {
         second: '2-digit'
     });
 
-    const formattedDateTime = ${formattedDate} ${formattedTime};
+    const formattedDateTime = `${formattedDate} ${formattedTime}`;
 
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
@@ -121,15 +120,15 @@ const scheduleJob = async () => {
             lastUpdated: { $lt: oneMinuteAgo }
         });
 
-        console.log(Deleted ${result.deletedCount} documents);
+        console.log(`Deleted ${result.deletedCount} documents`);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
 };
 
-// Schedule the job to run every minute
 cron.schedule('* * * * *', scheduleJob);
 
 mongooseConnect();
 
-app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
