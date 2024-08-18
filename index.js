@@ -22,26 +22,43 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    let formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
-    formattedTime = `${formattedDate} ${formattedTime}`;
+    const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata' // Change this to your time zone
+    };
+
+    const formattedTime = date.toLocaleString('en-US', options);
+    
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({ name, registerNo, gender, graduate, hsc, myambition, dept, dob, date: formattedTime, arr, lastUpdated: Date.now() });
+    const response = new model({ 
+        name, 
+        registerNo, 
+        gender, 
+        graduate, 
+        hsc, 
+        myambition, 
+        dept, 
+        dob, 
+        date: formattedTime, 
+        arr, 
+        lastUpdated: Date.now() 
+    });
 
     try {
-        const a = await response.save();
-        res.json({ id: a._id, message: 'Data saved successfully', a });
+        await response.save();
+        res.status(201).json({ message: 'Data saved successfully' });
     } catch (err) {
-        res.status(400).send({ message: err.message });
+        res.status(500).json({ error: 'Failed to save data' });
     }
 });
+
 
 app.put('/update/:id', async (req, res) => {
     const id = req.params.id;
