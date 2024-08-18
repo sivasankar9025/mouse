@@ -1,16 +1,36 @@
 const mongoose = require('mongoose');
-const { model } = require('./schema');
+const cron = require('node-cron');
 const express = require('express');
 const cors = require('cors');
-const cron = require('node-cron');
 
+// Define your Mongoose schema and model
+const Schema = mongoose.Schema;
+
+const dataSchema = new Schema({
+    name: String,
+    registerNo: String,
+    gender: String,
+    graduate: Boolean,
+    hsc: String,
+    myambition: String,
+    dept: String,
+    dob: Date,
+    date: String,
+    arr: [String],
+    lastUpdated: Date
+});
+
+const DataModel = mongoose.model('Data', dataSchema);
+
+// Initialize Express app
 const app = express();
 app.use(express.json());
 app.use(cors());
 
+// MongoDB connection
 const mongooseConnect = async () => {
     try {
-        await mongoose.connect('mongodb+srv://pssm9025528322:9025528322@cluster0.altz4n8.mongodb.net/user?retryWrites=true&w=majority&appName=Cluster0', {
+        await mongoose.connect('mongodb+srv://<username>:<password>@cluster0.altz4n8.mongodb.net/user?retryWrites=true&w=majority', {
             useNewUrlParser: true,
             useUnifiedTopology: true
         });
@@ -20,6 +40,7 @@ const mongooseConnect = async () => {
     }
 };
 
+// Define your routes
 app.post('/post', async (req, res) => {
     const date = new Date();
     const options = {
@@ -30,14 +51,14 @@ app.post('/post', async (req, res) => {
         minute: '2-digit',
         second: '2-digit',
         hour12: true,
-        timeZone: 'Asia/Kolkata' // Change this to your time zone
+        timeZone: 'Asia/Kolkata' // Adjust as needed
     };
 
     const formattedTime = date.toLocaleString('en-US', options);
     
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({ 
+    const response = new DataModel({ 
         name, 
         registerNo, 
         gender, 
@@ -64,7 +85,7 @@ app.put('/update/:id', async (req, res) => {
     const { arr } = req.body;
 
     try {
-        const response = await model.updateOne(
+        const response = await DataModel.updateOne(
             { _id: id },
             { arr: arr, lastUpdated: Date.now() }
         );
@@ -76,7 +97,7 @@ app.put('/update/:id', async (req, res) => {
 
 app.get('/get', async (req, res) => {
     try {
-        const response = await model.find({});
+        const response = await DataModel.find({});
         res.json({ response });
     } catch (err) {
         res.status(500).send({ message: 'Error retrieving documents', error: err.message });
@@ -86,7 +107,8 @@ app.get('/get', async (req, res) => {
 app.post('/score', async (req, res) => {
     const { title, score } = req.body;
     try {
-        const response = new scoremodel({ title, score });
+        const ScoreModel = mongoose.model('Score', new Schema({ title: String, score: Number }));
+        const response = new ScoreModel({ title, score });
         await response.save();
         res.send('score saved');
     } catch (err) {
@@ -97,7 +119,7 @@ app.post('/score', async (req, res) => {
 app.post('/deleteAll', async (req, res) => {
     try {
         // Delete all documents in the collection
-        const result = await model.deleteMany({});
+        const result = await DataModel.deleteMany({});
 
         if (result.deletedCount > 0) {
             res.status(200).send({ message: 'All documents deleted successfully', data: result });
@@ -109,12 +131,14 @@ app.post('/deleteAll', async (req, res) => {
     }
 });
 
+// Schedule the job
 const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
+        console.log('One hour ago:', oneHourAgo.toISOString());
 
         // Find and delete documents with empty arrays and older than 1 hour
-        const result = await model.deleteMany({
+        const result = await DataModel.deleteMany({
             arr: { $size: 0 },
             lastUpdated: { $lt: oneHourAgo }
         });
@@ -125,9 +149,10 @@ const scheduleJob = async () => {
     }
 };
 
-// Schedule the job to run every 1 hour
+// Schedule the job to run every hour
 cron.schedule('0 * * * *', scheduleJob);
 
-mongooseConnect();
-
-app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
+// Start the server
+mongooseConnect().then(() => {
+    app.listen(5000, () => console.log('Server running on port 5000'));
+});
