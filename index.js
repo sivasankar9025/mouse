@@ -21,46 +21,27 @@ const mongooseConnect = async () => {
 };
 
 app.post('/post', async (req, res) => {
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    let formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
+    formattedTime = `${formattedDate} ${formattedTime}`;
+    const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
+
+    const response = new model({ name, registerNo, gender, graduate, hsc, myambition, dept, dob, date: formattedTime, arr, lastUpdated: Date.now() });
+
     try {
-        const date = new Date();
-        const options = {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-            timeZone: 'Asia/Kolkata' // Ensure correct time zone
-        };
-        const formattedTime = date.toLocaleString('en-US', options);
-
-        const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
-
-        // Ensure `arr` is an array, even if it's a string
-        const arrArray = Array.isArray(arr) ? arr : arr.split(',').map(item => item.trim());
-
-        const response = new model({
-            name, 
-            registerNo, 
-            gender, 
-            graduate, 
-            hsc, 
-            myambition, 
-            dept, 
-            dob, 
-            date: formattedTime, 
-            arr: arrArray, // Store the array
-            lastUpdated: Date.now()
-        });
-
-        await response.save();
-        res.status(201).send(response);
-    } catch (error) {
-        res.status(500).send({ error: 'Failed to store data' });
+        const a = await response.save();
+        res.json({ id: a._id, message: 'Data saved successfully', a });
+    } catch (err) {
+        res.status(400).send({ message: err.message });
     }
 });
-
 
 app.put('/update/:id', async (req, res) => {
     const id = req.params.id;
