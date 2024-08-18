@@ -113,10 +113,10 @@ const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
 
-        // Find and delete documents with empty arrays and older than 1 hour
+        // Ensure that the date comparison works as expected
         const result = await model.deleteMany({
-            arr: { $size: 0 },
-            lastUpdated: { $lt: oneHourAgo }
+            arr: { $size: 0 }, // Match documents with an empty array
+            lastUpdated: { $lt: oneHourAgo } // Match documents older than 1 hour
         });
 
         console.log(`Deleted ${result.deletedCount} documents`);
@@ -125,9 +125,10 @@ const scheduleJob = async () => {
     }
 };
 
-// Schedule the job to run every 1 hour
+// Schedule the job to run every hour
 cron.schedule('0 * * * *', scheduleJob);
 
 mongooseConnect();
 
-app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
+app.listen(process.env.PORT || 5000, () => console.log('Server running on port 5000'));
+
