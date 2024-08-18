@@ -22,40 +22,24 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-    const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Kolkata' // Change this to your time zone
-    };
-
-    const formattedTime = date.toLocaleString('en-US', options);
-    
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    let formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
+    formattedTime = `${formattedDate} ${formattedTime}`;
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({ 
-        name, 
-        registerNo, 
-        gender, 
-        graduate, 
-        hsc, 
-        myambition, 
-        dept, 
-        dob, 
-        date: formattedTime, 
-        arr, 
-        lastUpdated: Date.now() 
-    });
+    const response = new model({ name, registerNo, gender, graduate, hsc, myambition, dept, dob, date: formattedTime, arr, lastUpdated: Date.now() });
 
     try {
-        await response.save();
-        res.status(201).json({ message: 'Data saved successfully' });
+        const a = await response.save();
+        res.json({ id: a._id, message: 'Data saved successfully', a });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to save data' });
+        res.status(400).send({ message: err.message });
     }
 });
 
@@ -112,7 +96,6 @@ app.post('/deleteAll', async (req, res) => {
 const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
-        console.log('One hour ago:', oneHourAgo); // Logging the calculated time
 
         // Find and delete documents with empty arrays and older than 1 hour
         const result = await model.deleteMany({
@@ -120,18 +103,15 @@ const scheduleJob = async () => {
             lastUpdated: { $lt: oneHourAgo }
         });
 
-        console.log(Deleted ${result.deletedCount} documents);
+        console.log(`Deleted ${result.deletedCount} documents`);
     } catch (err) {
         console.error('Error running scheduled job:', err);
     }
 };
 
 // Schedule the job to run every 1 hour
-cron.schedule('0 * * * *', () => {
-    console.log('Cron job running at:', new Date()); // Logging when the cron job runs
-    scheduleJob();
-});
+cron.schedule('0 * * * *', scheduleJob);
 
 mongooseConnect();
 
-app.listen(process.env.PORT || 5000, () => console.log('Port connected'));
+app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
