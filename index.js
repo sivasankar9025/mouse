@@ -112,7 +112,6 @@ app.post('/deleteAll', async (req, res) => {
 const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
-        console.log('One hour ago:', oneHourAgo); // Logging the calculated time
 
         // Find and delete documents with empty arrays and older than 1 hour
         const result = await model.deleteMany({
@@ -127,11 +126,8 @@ const scheduleJob = async () => {
 };
 
 // Schedule the job to run every 1 hour
-cron.schedule('0 * * * *', () => {
-    console.log('Cron job running at:', new Date()); // Logging when the cron job runs
-    scheduleJob();
-});
+cron.schedule('0 * * * *', scheduleJob);
 
 mongooseConnect();
 
-app.listen(process.env.PORT || 5000, () => console.log('Port connected'));
+app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
