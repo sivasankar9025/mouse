@@ -111,12 +111,12 @@ app.post('/deleteAll', async (req, res) => {
 
 const scheduleJob = async () => {
     try {
-        const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
+        const now = new Date();
 
-        // Find and delete documents with empty arrays and older than 1 hour
+        // Find and delete documents with empty arrays and where deleteAfter is older than the current time
         const result = await model.deleteMany({
             arr: { $size: 0 },
-            lastUpdated: { $lt: oneHourAgo }
+            deleteAfter: { $lte: now }
         });
 
         console.log(`Deleted ${result.deletedCount} documents`);
@@ -125,9 +125,17 @@ const scheduleJob = async () => {
     }
 };
 
-// Schedule the job to run every 1 hour
-cron.schedule('0 * * * *', scheduleJob);
+// Schedule the job to run every minute
+cron.schedule('* * * * *', scheduleJob);
+
+// Function to set the deleteAfter field when creating or updating a document
+const setDeleteAfter = async (docId) => {
+    const oneMinuteFromNow = new Date(Date.now() + 1 * 60 * 1000); // 1 minute from now
+
+    await model.findByIdAndUpdate(docId, { deleteAfter: oneMinuteFromNow });
+};
 
 mongooseConnect();
 
 app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
+
