@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { model } = require('./schema');
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
@@ -7,7 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Mongoose Schema Definition
 const MySchema = new mongoose.Schema({
     name: String,
     registerNo: String,
@@ -76,7 +76,7 @@ app.post('/post', async (req, res) => {
     }
 });
 
-// PUT Route to Update Data
+
 app.put('/update/:id', async (req, res) => {
     const id = req.params.id;
     const { arr } = req.body;
@@ -92,7 +92,6 @@ app.put('/update/:id', async (req, res) => {
     }
 });
 
-// GET Route to Retrieve Data
 app.get('/get', async (req, res) => {
     try {
         const response = await model.find({});
@@ -102,7 +101,6 @@ app.get('/get', async (req, res) => {
     }
 });
 
-// POST Route to Save Score Data (assuming another schema exists for this)
 app.post('/score', async (req, res) => {
     const { title, score } = req.body;
     try {
@@ -114,9 +112,9 @@ app.post('/score', async (req, res) => {
     }
 });
 
-// POST Route to Delete All Documents
 app.post('/deleteAll', async (req, res) => {
     try {
+        // Delete all documents in the collection
         const result = await model.deleteMany({});
 
         if (result.deletedCount > 0) {
@@ -129,11 +127,11 @@ app.post('/deleteAll', async (req, res) => {
     }
 });
 
-// Scheduled Job to Delete Old Documents
 const scheduleJob = async () => {
     try {
         const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
 
+        // Find and delete documents with empty arrays and older than 1 hour
         const result = await model.deleteMany({
             arr: { $size: 0 },
             lastUpdated: { $lt: oneHourAgo }
@@ -147,6 +145,10 @@ const scheduleJob = async () => {
 
 // Schedule the job to run every 1 hour
 cron.schedule('0 * * * *', scheduleJob);
+
+mongooseConnect();
+
+app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
 
 // Start Mongoose Connection and Express Server
 mongooseConnect();
