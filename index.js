@@ -21,43 +21,46 @@ const mongooseConnect = async () => {
 };
 
 app.post('/post', async (req, res) => {
-    const date = new Date();
-    const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Kolkata' // Change this to your time zone
-    };
-
-    const formattedTime = date.toLocaleString('en-US', options);
-    
-    const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
-
-    const response = new model({ 
-        name, 
-        registerNo, 
-        gender, 
-        graduate, 
-        hsc, 
-        myambition, 
-        dept, 
-        dob, 
-        date: formattedTime, 
-        arr, 
-        lastUpdated: Date.now() 
-    });
-
     try {
-        const a = await response.save();
-        res.json({ id: a._id, message: 'Data saved successfully', a });
-    } catch (err) {
-        res.status(400).send({ message: err.message });
+        const date = new Date();
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata' // Ensure correct time zone
+        };
+        const formattedTime = date.toLocaleString('en-US', options);
+
+        const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
+
+        // Ensure `arr` is an array, even if it's a string
+        const arrArray = Array.isArray(arr) ? arr : arr.split(',').map(item => item.trim());
+
+        const response = new model({
+            name, 
+            registerNo, 
+            gender, 
+            graduate, 
+            hsc, 
+            myambition, 
+            dept, 
+            dob, 
+            date: formattedTime, 
+            arr: arrArray, // Store the array
+            lastUpdated: Date.now()
+        });
+
+        await response.save();
+        res.status(201).send(response);
+    } catch (error) {
+        res.status(500).send({ error: 'Failed to store data' });
     }
 });
+
 
 app.put('/update/:id', async (req, res) => {
     const id = req.params.id;
