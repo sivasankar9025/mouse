@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { model } = require('./schema'); // Ensure 'schema.js' exports your Mongoose schema properly
+const { model } = require('./schema');
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
@@ -22,25 +22,22 @@ const mongooseConnect = async () => {
 
 app.post('/post', async (req, res) => {
     const date = new Date();
-
-    const formattedDate = date.toLocaleDateString('en-GB', {
+    const options = {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit'
-    }).split('/').reverse().join('-');
-
-    const formattedTime = date.toLocaleTimeString('en-US', {
-        hour12: true,
+        day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
-    });
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata' // Change this to your time zone
+    };
 
-    const formattedDateTime = `${formattedDate} ${formattedTime}`;
-
+    const formattedTime = date.toLocaleString('en-US', options);
+    
     const { name, registerNo, gender, graduate, hsc, myambition, dept, dob, arr } = req.body;
 
-    const response = new model({
+    const response = new model({ 
         name, 
         registerNo, 
         gender, 
@@ -49,9 +46,9 @@ app.post('/post', async (req, res) => {
         myambition, 
         dept, 
         dob, 
-        date: formattedDateTime, 
+        date: formattedTime, 
         arr, 
-        lastUpdated: Date.now()
+        lastUpdated: Date.now() 
     });
 
     try {
@@ -99,6 +96,7 @@ app.post('/score', async (req, res) => {
 
 app.post('/deleteAll', async (req, res) => {
     try {
+        // Delete all documents in the collection
         const result = await model.deleteMany({});
 
         if (result.deletedCount > 0) {
@@ -115,6 +113,7 @@ const scheduleJob = async () => {
     try {
         const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000); // 1 minute ago
 
+        // Find and delete documents with empty arrays and older than 1 minute
         const result = await model.deleteMany({
             arr: { $size: 0 },
             lastUpdated: { $lt: oneMinuteAgo }
@@ -126,9 +125,9 @@ const scheduleJob = async () => {
     }
 };
 
+// Schedule the job to run every minute
 cron.schedule('* * * * *', scheduleJob);
 
 mongooseConnect();
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(5000 || process.env.PORT, () => console.log('Port connected'));
